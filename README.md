@@ -1,12 +1,19 @@
 # Big-Data-Apache-Spark
 
 •	Technologies used: Kafka, Spark, Spark-Mlib
+
 •	We were given an API, Guardian2, from which the news was to be streamed. 
+
 •	Stream_producer.py program was also given, which was the PRODUCER part of the kafka streaming. (inputs = API key, fromDate, toDate)
+
 •	What we had to do, was the offline training of the data, and real time classification of the new test data.
+
 •	(Follow all the steps given in the ppt, on apache kafka and spark) Also download pycharm, this will make your life easier. 
+
 •	Steps to follow - 
+  
   1.	Start the zookeeper and kafka servers.
+  
   Go to the directory where kafka is downloaded, and do the following
   
     [1] .bin/zookeeper-server-start.sh config/zookeeper.properties (in terminal 1)
