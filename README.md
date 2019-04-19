@@ -21,6 +21,7 @@
   3.	REAL TIME CLASSIFICATION FOR TEST DATA.
   Write a consumer program, to consume the data produced by the stream_producer.py program (change the dates), run the model.py, and write the consumer program such a way that it classifies from the beginning of the streaming. 
   Pass the test data through the pipeline and fit it to the model. ML algorithms used - 
+  
     a.	Logistic Regression
     
     b.	Naïve Bayes
