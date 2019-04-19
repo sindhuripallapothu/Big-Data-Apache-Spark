@@ -1,0 +1,82 @@
+from pyspark.sql import Row, SparkSession, SQLContext
+from pyspark import SparkContext
+from pyspark.sql.functions import col
+from pyspark.ml import Pipeline
+from pyspark.sql.types import IntegerType, StringType
+from pyspark.ml.classification import LogisticRegression
+from pyspark.ml.feature import HashingTF, Tokenizer
+from pyspark.ml.feature import StopWordsRemover
+from pyspark.ml.feature import *
+from pyspark.ml.classification import *
+from pyspark.ml.evaluation import *
+from kafka import KafkaConsumer
+import pandas as pd
+from pyspark.sql.types import *
+from nltk.corpus import stopwords
+
+# spark = SparkSession.builder.appName("PLS").getOrCreate
+sc = SparkContext()
+sqlContext = SQLContext(sc)
+
+
+def TextToDF(url):
+    df = pd.read_csv(url, delimiter='\n', header=None)
+    df.columns = ['News']
+
+    df["category"] = df["News"].str[:1]
+    df["News"] = df["News"].str[3:]
+    df["category"] = df["category"].astype(int)
+    print(df)
+
+    df_spark = sqlContext.createDataFrame(df, schema=None)
+
+    return df_spark
+
+
+train_data = TextToDF(r"/home/sindhuri/Downloads/outFile_training1.txt")
+# print(type(train_data))
+
+stop_word = list(set(stopwords.words('english')))
+
+regTokenizer = RegexTokenizer(inputCol = "News", outputCol= "words", pattern="\\W")
+remover = StopWordsRemover(inputCol="words", outputCol="filtered").setStopWords(stop_word)
+htf = HashingTF(inputCol="filtered", outputCol="rawFeatures", numFeatures=10000)
+idf = IDF(inputCol="rawFeatures", outputCol= "features", minDocFreq=5)
+label_string_indexer = StringIndexer(inputCol="category", outputCol="label")
+label_string_indexer.setHandleInvalid("keep")
+
+pipeline = Pipeline(stages=[regTokenizer, remover, htf, idf, label_string_indexer])
+pipelinefit = pipeline.fit(train_data)
+dataset = pipelinefit.transform(train_data)
+print("dataset.show(5)")
+dataset.show(5)
+
+#(trainingData, testData) = dataset.randomSplit([0.7, 0.3], seed = 100)
+
+nb = NaiveBayes(smoothing=1, modelType="multinomial")
+nbModel = nb.fit(dataset)
+
+consumer = KafkaConsumer('guardian2', bootstrap_servers=['localhost:9092'],
+                         auto_offset_reset = 'earliest',
+                         enable_auto_commit = True,
+                         api_version =(0,10),
+                         consumer_timeout_ms=10000,
+                         value_deserializer=lambda x: x.decode('utf-8'))
+print("Starting ML prediction")
+data = []
+for message in consumer:
+    tmp = list()
+    tmp.append(int(message.value.split("||")[0]))
+    tmp.append(message.value.split("||")[1])
+    data.append(tmp)
+
+df_spark_test = sqlContext.createDataFrame(data, schema= ["category", "News"])
+dataset_test = pipelinefit.transform(df_spark_test)
+predictions = nbModel.transform(dataset_test)
+predictions.filter(predictions['prediction'] == 0)\
+    .select("News", "category", "probability", "label", "prediction", "features")\
+    .orderBy("probability", ascending = False)\
+    .show(5)
+evaluator = MulticlassClassificationEvaluator(predictionCol = "prediction")
+accuracy = evaluator.evaluate(predictions)
+print(accuracy*100)
