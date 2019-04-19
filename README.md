@@ -8,12 +8,14 @@
 •	Steps to follow - 
   1.	Start the zookeeper and kafka servers.
   Go to the directory where kafka is downloaded, and do the following
+  
   [1] .bin/zookeeper-server-start.sh config/zookeeper.properties (in terminal 1)
+  
   [2] .bin/kafka-server-start.sh config/server.properties (in terminal 2)
 
   2.	GET DATA FOR OFFLINE TRAINING. 
   Modify the streanm_producer.py program in such a way that the data streamed get saved into a text file. 
-  Make another file – model.py, where you load the txt file and make it into a dataframe, and fit it to a pipeline model consisting of – RegexTokenizer, StopWordRemover, TF-IDF, vectorizer, label indexer and a classifier. 
+  Make another file – model.py, where you load the txt file and make it into a dataframe, and fit it to a pipeline model consisting of –     RegexTokenizer, StopWordRemover, TF-IDF, vectorizer, label indexer and a classifier. 
   Fit the training data to this model. And save the model – pickle or just save the model as .model file
   
   3.	REAL TIME CLASSIFICATION FOR TEST DATA.
